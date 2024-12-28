@@ -42,4 +42,4 @@ next-env.d.ts
 
 combined.jsx
 combine.js
-env.local
+.env.local

@@ -1,4 +1,4 @@
-'use client';
+"use client";
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useSpotifyAuth } from '../hooks/useSpotifyAuth';
 import { useSession } from '../hooks/useSession';
@@ -22,34 +22,62 @@ const SessionHost = ({ sessionId }) => {
     setTimeout(() => setIsCopied(false), 2000);
   };
 
-  // Debounced session state update
-  const debouncedUpdateState = useCallback(
-    debounce(async (state) => {
-      if (!sessionId || !user) return;
+  const playNextTrack = async () => {
+    if (!session?.queue?.length || !player || !accessToken) return;
 
-      try {
-        await update(ref(database, `sessions/${sessionId}`), {
-          currentTrack: {
-            uri: state.track_window.current_track.uri,
-            position: state.position,
-            timestamp: Date.now(),
-            name: state.track_window.current_track.name,
-            artists: state.track_window.current_track.artists.map((a) => a.name),
-            albumArt: state.track_window.current_track.album.images[0]?.url,
-          },
-          isPlaying: !state.paused,
-          hostName: user.display_name || 'Host',
-          lastUpdated: Date.now(),
-        });
-      } catch (err) {
-        console.error('Error updating session state:', err);
-        setError('Failed to update session state');
+    try {
+      const nextTrack = session.queue[0];
+      
+      // Update the session first
+      await update(ref(database, `sessions/${sessionId}`), {
+        currentTrack: {
+          ...nextTrack,
+          position: 0,
+          timestamp: Date.now(),
+        },
+        queue: session.queue.slice(1),
+        isPlaying: true,
+      });
+
+      // Then play the track
+      await fetch('https://api.spotify.com/v1/me/player/play', {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          uris: [nextTrack.uri],
+        }),
+      });
+    } catch (err) {
+      console.error('Error playing next track:', err);
+      setError('Failed to play next track');
+    }
+  };
+
+  // Effect to monitor queue changes
+  useEffect(() => {
+    if (!session?.currentTrack && session?.queue?.length > 0) {
+      playNextTrack();
+    }
+  }, [session?.queue]);
+
+  // Effect to monitor track completion
+  useEffect(() => {
+    const checkTrackCompletion = async () => {
+      if (!player) return;
+      
+      const state = await player.getCurrentState();
+      if (state?.position === 0 && state?.paused && session?.queue?.length > 0) {
+        playNextTrack();
       }
-    }, 200),
-    [sessionId, user]
-  );
+    };
 
-  // Initialize player
+    const interval = setInterval(checkTrackCompletion, 1000);
+    return () => clearInterval(interval);
+  }, [player, session?.queue]);
+
   useEffect(() => {
     let cleanup = () => {};
 
@@ -65,7 +93,6 @@ const SessionHost = ({ sessionId }) => {
           volume: 0.5,
         });
 
-        // Set up event listeners
         const eventListeners = {
           ready: ({ device_id }) => {
             console.log('Ready with Device ID', device_id);
@@ -81,12 +108,10 @@ const SessionHost = ({ sessionId }) => {
           playback_error: ({ message }) => setError(`Playback Error: ${message}`),
         };
 
-        // Add all event listeners
         Object.entries(eventListeners).forEach(([event, callback]) => {
           spotifyPlayer.addListener(event, callback);
         });
 
-        // Connect the player
         const connected = await spotifyPlayer.connect();
         if (!connected) throw new Error('Failed to connect to Spotify');
 
@@ -150,24 +175,11 @@ const SessionHost = ({ sessionId }) => {
           break;
         }
         case 'next':
-          await player.nextTrack();
+          await playNextTrack();
           break;
         case 'previous':
           await player.previousTrack();
           break;
-        case 'playQueueTrack': {
-          if (session?.queue?.length > 0) {
-            const nextTrack = session.queue[0];
-            await player.play({
-              uris: [nextTrack.uri],
-            });
-            const newQueue = session.queue.slice(1);
-            await update(ref(database, `sessions/${sessionId}`), {
-              queue: newQueue,
-            });
-          }
-          break;
-        }
       }
     } catch (err) {
       setError(`Failed to ${action}: ${err.message}`);
@@ -193,8 +205,31 @@ const SessionHost = ({ sessionId }) => {
         {session && (
           <>
             <div>
-              <button onClick={copySessionCode}>
+              <button 
+                onClick={copySessionCode}
+                className="bg-orange-500 text-white px-4 py-2 rounded-full hover:bg-orange-600 transition-colors"
+              >
                 {isCopied ? 'Copied!' : 'Copy Session Code'}
+              </button>
+            </div>
+            <div className="flex space-x-4 justify-center">
+              <button
+                onClick={() => handlePlayback('previous')}
+                className="bg-gray-700 text-white px-6 py-3 rounded-full hover:bg-gray-600"
+              >
+                Previous
+              </button>
+              <button
+                onClick={() => handlePlayback('togglePlay')}
+                className="bg-orange-500 text-white px-8 py-3 rounded-full hover:bg-orange-600"
+              >
+                {session.isPlaying ? 'Pause' : 'Play'}
+              </button>
+              <button
+                onClick={() => handlePlayback('next')}
+                className="bg-gray-700 text-white px-6 py-3 rounded-full hover:bg-gray-600"
+              >
+                Next
               </button>
             </div>
           </>

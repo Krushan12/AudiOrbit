@@ -10,7 +10,11 @@ export default function SessionPage() {
   const { user } = useSpotifyAuth();
 
   if (!user) {
-    return <p>Loading...</p>; // Show a loader while fetching user info
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-[#0d0d0d] to-[#111111] flex items-center justify-center">
+        <p className="text-white">Loading...</p>
+      </div>
+    );
   }
 
   return user.isHost ? (

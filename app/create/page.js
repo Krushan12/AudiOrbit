@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { database } from '@/lib/firebase';
 import { ref, set } from 'firebase/database';
 import { useSpotifyAuth } from '@/hooks/useSpotifyAuth';
+import '../globals.css';
 
 export default function CreateSession() {
   const router = useRouter();

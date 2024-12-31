@@ -9,18 +9,18 @@ import { useSpotifyAuth } from '@/hooks/useSpotifyAuth';
 
 export default function CreateSession() {
   const router = useRouter();
-  const { accessToken, user } = useSpotifyAuth();
+  const { accessToken, user, loading, error: authError } = useSpotifyAuth();
   const [sessionName, setSessionName] = useState('');
   const [sessionDescription, setSessionDescription] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
   // Redirect to Spotify login if not authenticated
   useEffect(() => {
-    if (!accessToken && !isLoading) {
+    if (!loading && !accessToken) {
       router.push('/api/auth/login');
     }
-  }, [accessToken, isLoading, router]);
+  }, [accessToken, loading, router]);
 
   const handleCreateSession = async (e) => {
     e.preventDefault();
@@ -34,7 +34,7 @@ export default function CreateSession() {
       return;
     }
 
-    setIsLoading(true);
+    setIsSubmitting(true);
     setError('');
 
     try {
@@ -69,10 +69,22 @@ export default function CreateSession() {
           ? 'Database connection failed. Please try again.'
           : 'Failed to create session. Please try again.'
       );
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-[#0d0d0d] to-[#111111] flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-white mb-4">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show login prompt if not authenticated
   if (!accessToken) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-[#0d0d0d] to-[#111111] flex items-center justify-center">
@@ -89,6 +101,24 @@ export default function CreateSession() {
     );
   }
 
+  // Show error state if there's an authentication error
+  if (error || authError) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-[#0d0d0d] to-[#111111] flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-500 mb-4">{error || authError}</p>
+          <button
+            onClick={() => window.location.href = '/api/auth/login'}
+            className="bg-green-500 text-white px-6 py-3 rounded-full hover:bg-green-600 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Main form render
   return (
     <main className="min-h-screen bg-gradient-to-b from-[#0d0d0d] to-[#111111] flex items-center justify-center py-16 px-4">
       <div className="max-w-md w-full space-y-8">
@@ -139,10 +169,10 @@ export default function CreateSession() {
 
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={isSubmitting}
             className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-500 text-white font-semibold py-4 px-6 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50"
           >
-            {isLoading ? 'Creating Session...' : 'Create Session'}
+            {isSubmitting ? 'Creating Session...' : 'Create Session'}
           </button>
         </form>
       </div>

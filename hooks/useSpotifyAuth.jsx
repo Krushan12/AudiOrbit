@@ -1,51 +1,36 @@
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+'use server';
+import { cookies } from 'next/headers';
 
-export const useSpotifyAuth = () => {
-  const [accessToken, setAccessToken] = useState(null);
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const router = useRouter();
+export async function getCurrentUser() {
+  console.log('Getting cookies...');
+  const cookieStore = await cookies();
+  const accessToken = cookieStore.get('spotify_access_token')?.value;
+  console.log('Access token from cookies:', accessToken ? '***token exists***' : 'no token found');
 
-  useEffect(() => {
-    const checkAuthStatus = async () => {
-      try {
-        // Check for auth cookies first
-        const response = await fetch('/api/auth/check');
-        const data = await response.json();
+  if (!accessToken) {
+    console.log('No access token found');
+    return null;
+  }
 
-        if (data.accessToken) {
-          setAccessToken(data.accessToken);
-          
-          // Fetch user profile with the token
-          const userResponse = await fetch('https://api.spotify.com/v1/me', {
-            headers: {
-              'Authorization': `Bearer ${data.accessToken}`
-            }
-          });
-
-          if (!userResponse.ok) {
-            throw new Error('Failed to fetch user profile');
-          }
-
-          const userData = await userResponse.json();
-          setUser(userData);
-        }
-      } catch (err) {
-        console.error('Auth check error:', err);
-        setError(err.message);
-      } finally {
-        setLoading(false);
+  try {
+    console.log('Fetching user data from Spotify API...');
+    const response = await fetch('https://api.spotify.com/v1/me', {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
       }
-    };
+    });
 
-    checkAuthStatus();
-  }, []);
+    if (!response.ok) {
+      console.error('Error fetching user data:', response.status, response.statusText);
+      return null;
+    }
 
-  const login = () => {
-    router.push('/api/auth/login');
-  };
-
-  return { accessToken, user, loading, error, login };
-};
+    const userData = await response.json();
+    console.log('Successfully fetched user data:', userData);
+    return userData;
+  } catch (error) {
+    console.error('Failed to fetch user data:', error);
+    return null;
+  }
+}

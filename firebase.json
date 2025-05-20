@@ -1,0 +1,9 @@
+{
+  "database": {
+    "rules": {
+      "sessions": {
+        ".indexOn": ["createdAt"]
+      }
+    }
+  }
+}

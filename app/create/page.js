@@ -2,181 +2,125 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { v4 as uuidv4 } from 'uuid';
-import { database } from '@/lib/firebase';
-import { ref, set } from 'firebase/database';
-import { useSpotifyAuth } from '@/hooks/useSpotifyAuth';
+import { getCurrentUser } from '@/hooks/useSpotifyAuth';
+import Link from 'next/link';
 import '../globals.css';
 
-export default function CreateSession() {
+export default function CreateRoom() {
   const router = useRouter();
-  const { accessToken, user, loading, error: authError } = useSpotifyAuth();
-  const [sessionName, setSessionName] = useState('');
-  const [sessionDescription, setSessionDescription] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [roomName, setRoomName] = useState('');
+  const [isPrivate, setIsPrivate] = useState(false);
+  const [creating, setCreating] = useState(false);
   const [error, setError] = useState('');
 
-  // Redirect to Spotify login if not authenticated
   useEffect(() => {
-    if (!loading && !accessToken) {
-      router.push('/api/auth/login');
-    }
-  }, [accessToken, loading, router]);
-
-  const handleCreateSession = async (e) => {
-    e.preventDefault();
-    if (!sessionName.trim()) {
-      setError('Please enter a session name');
-      return;
-    }
-
-    if (!accessToken) {
-      setError('Please login with Spotify first');
-      return;
-    }
-
-    setIsSubmitting(true);
-    setError('');
-
-    try {
-      // Check database connection
-      if (!database) {
-        throw new Error('Database connection not established');
+    const checkAuth = async () => {
+      try {
+        const userData = await getCurrentUser();
+        if (!userData) {
+          router.push('/');
+          return;
+        }
+        setUser(userData);
+      } catch (error) {
+        console.error('Auth error:', error);
+        router.push('/');
+      } finally {
+        setLoading(false);
       }
+    };
 
-      // Generate a unique session ID
-      const sessionId = uuidv4();
+    checkAuth();
+  }, [router]);
 
-      // Create the session in Firebase
-      const sessionRef = ref(database, `sessions/${sessionId}`);
-      await set(sessionRef, {
-        name: sessionName,
-        description: sessionDescription,
-        createdAt: Date.now(),
-        hostId: user?.id,
-        hostName: user?.display_name || 'Anonymous',
-        currentTrack: null,
-        isPlaying: false,
-        queue: [],
-        active: true
-      });
-
-      // Redirect to the session page
-      router.push(`/session/${sessionId}`);
-    } catch (err) {
-      console.error('Error creating session:', err);
-      setError(
-        err.message === 'Database connection not established'
-          ? 'Database connection failed. Please try again.'
-          : 'Failed to create session. Please try again.'
-      );
-      setIsSubmitting(false);
+  const handleCreateRoom = async (e) => {
+    e.preventDefault();
+    
+    if (!roomName.trim()) {
+      setError('Please enter a room name');
+      return;
+    }
+    
+    setCreating(true);
+    setError('');
+    
+    try {
+      // Here you would integrate with your backend to create a room
+      // For now, we'll simulate a successful room creation
+      const roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+      
+      // Redirect to the room page with the new room code
+      router.push(`/room/${roomCode}?host=true`);
+    } catch (error) {
+      console.error('Error creating room:', error);
+      setError('Failed to create room. Please try again.');
+      setCreating(false);
     }
   };
 
-  // Show loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-[#0d0d0d] to-[#111111] flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-white mb-4">Loading...</p>
-        </div>
+      <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black flex items-center justify-center">
+        <div className="text-white text-xl">Loading...</div>
       </div>
     );
   }
 
-  // Show login prompt if not authenticated
-  if (!accessToken) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-[#0d0d0d] to-[#111111] flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-white mb-4">Please login with Spotify to create a session</p>
-          <button
-            onClick={() => router.push('/api/auth/login')}
-            className="bg-green-500 text-white px-6 py-3 rounded-full hover:bg-green-600 transition-colors"
-          >
-            Login with Spotify
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // Show error state if there's an authentication error
-  if (error || authError) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-[#0d0d0d] to-[#111111] flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-500 mb-4">{error || authError}</p>
-          <button
-            onClick={() => window.location.href = '/api/auth/login'}
-            className="bg-green-500 text-white px-6 py-3 rounded-full hover:bg-green-600 transition-colors"
-          >
-            Try Again
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // Main form render
   return (
-    <main className="min-h-screen bg-gradient-to-b from-[#0d0d0d] to-[#111111] flex items-center justify-center py-16 px-4">
-      <div className="max-w-md w-full space-y-8">
-        <div className="text-center mb-12">
-          <h1 className="text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-orange-600 mb-6">
-            Create New Session
-          </h1>
-          <p className="text-lg text-gray-300 max-w-lg mx-auto leading-relaxed">
-            Set up your own session to listen to music with your friends on Spotify!
-          </p>
+    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white">
+      <div className="container mx-auto px-4 py-16">
+        <div className="max-w-md mx-auto bg-gray-800 rounded-lg p-8 shadow-lg">
+          <Link href="/dashboard" className="text-green-500 hover:text-green-400 mb-6 inline-block">
+            &larr; Back to Dashboard
+          </Link>
+          
+          <h1 className="text-3xl font-bold mb-6">Create a Listening Room</h1>
+          
+          {error && (
+            <div className="bg-red-500/20 border border-red-500 text-red-100 px-4 py-3 rounded mb-4">
+              {error}
+            </div>
+          )}
+          
+          <form onSubmit={handleCreateRoom}>
+            <div className="mb-4">
+              <label htmlFor="roomName" className="block text-gray-300 mb-2">Room Name</label>
+              <input
+                type="text"
+                id="roomName"
+                value={roomName}
+                onChange={(e) => setRoomName(e.target.value)}
+                className="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2 text-white focus:outline-none focus:border-green-500"
+                placeholder="My Awesome Room"
+                disabled={creating}
+              />
+            </div>
+            
+            <div className="mb-6">
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={isPrivate}
+                  onChange={(e) => setIsPrivate(e.target.checked)}
+                  className="mr-2"
+                  disabled={creating}
+                />
+                <span className="text-gray-300">Private Room (Invite Only)</span>
+              </label>
+            </div>
+            
+            <button
+              type="submit"
+              disabled={creating}
+              className={`w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-full transition ${creating ? 'opacity-70 cursor-not-allowed' : ''}`}
+            >
+              {creating ? 'Creating Room...' : 'Create Room'}
+            </button>
+          </form>
         </div>
-
-        {error && (
-          <div className="bg-red-500 text-white p-3 rounded-lg text-center">
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleCreateSession} className="space-y-6">
-          <div>
-            <label htmlFor="sessionName" className="block text-white font-semibold mb-2">
-              Session Name
-            </label>
-            <input
-              type="text"
-              id="sessionName"
-              value={sessionName}
-              onChange={(e) => setSessionName(e.target.value)}
-              placeholder="Enter session name"
-              className="w-full bg-gray-800 text-white px-6 py-4 rounded-full focus:outline-none focus:ring-2 focus:ring-orange-500 text-lg shadow-lg hover:shadow-xl transition-all duration-300"
-              required
-            />
-          </div>
-
-          <div>
-            <label htmlFor="sessionDescription" className="block text-white font-semibold mb-2">
-              Session Description (optional)
-            </label>
-            <textarea
-              id="sessionDescription"
-              value={sessionDescription}
-              onChange={(e) => setSessionDescription(e.target.value)}
-              placeholder="Enter a description for the session"
-              rows="4"
-              className="w-full bg-gray-800 text-white px-6 py-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-lg shadow-lg hover:shadow-xl transition-all duration-300"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-500 text-white font-semibold py-4 px-6 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50"
-          >
-            {isSubmitting ? 'Creating Session...' : 'Create Session'}
-          </button>
-        </form>
       </div>
-    </main>
+    </div>
   );
 }

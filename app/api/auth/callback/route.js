@@ -1,21 +1,24 @@
 // app/api/auth/callback/route.js
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { getBaseUrl } from '@/utils/auth';
 
 // Get environment variables with validation
 const clientId = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID;
 const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
-
-// For deployed environment, use the actual deployed URL
-// This handles both local development and production environments
-const baseUrl = process.env.VERCEL_URL 
-  ? `https://${process.env.VERCEL_URL}` 
-  : process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-
+const baseUrl = getBaseUrl();
 const redirectUri = `${baseUrl}/api/auth/callback`;
 
 export async function GET(request) {
   try {
+    // Add debug logging
+    console.log('Environment debug:');
+    console.log('VERCEL_URL:', process.env.VERCEL_URL);
+    console.log('NEXT_PUBLIC_BASE_URL:', process.env.NEXT_PUBLIC_BASE_URL);
+    console.log('NODE_ENV:', process.env.NODE_ENV);
+    console.log('Calculated base URL:', baseUrl);
+    console.log('Final redirect URI:', redirectUri);
+
     // Validate required environment variables
     if (!clientId || !clientSecret) {
       console.error('Missing required environment variables: NEXT_PUBLIC_SPOTIFY_CLIENT_ID or SPOTIFY_CLIENT_SECRET');
@@ -61,6 +64,8 @@ export async function GET(request) {
       }
       console.error('Token exchange error:', errorData);
       console.error('Redirect URI used:', redirectUri);
+      console.error('Response status:', response.status);
+      console.error('Response headers:', Object.fromEntries(response.headers.entries()));
       return NextResponse.redirect(new URL(`/?error=token_exchange_failed&status=${response.status}`, request.nextUrl.origin));
     }
 
@@ -85,11 +90,13 @@ export async function GET(request) {
       });
     }
 
+    console.log('Successfully exchanged code for tokens, redirecting to dashboard');
+    
     // Redirect to dashboard on successful login
     return NextResponse.redirect(new URL('/dashboard', request.nextUrl.origin));
   } catch (error) {
     console.error('Callback error:', error);
-    // Include more detailed error information in the redirect
+    console.error('Error stack:', error.stack);
     const errorMessage = encodeURIComponent(error.message || 'Unknown error');
     return NextResponse.redirect(new URL(`/?error=server_error&message=${errorMessage}`, request.nextUrl.origin));
   }

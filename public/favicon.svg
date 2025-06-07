@@ -1,13 +1,30 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Orbital Ring -->
-  <ellipse cx="16" cy="16" rx="15" ry="8" stroke="#1a1a1a" stroke-width="2" transform="rotate(-15)" />
-  
-  <!-- Car Silhouette -->
-  <path d="M12 18.5C12 17.6716 12.6716 17 13.5 17H18.5C19.3284 17 20 17.6716 20 18.5V19C20 19.8284 19.3284 20.5 18.5 20.5H13.5C12.6716 20.5 12 19.8284 12 19V18.5Z" fill="#1a1a1a"/>
-  <path d="M11 16L13 13H19L21 16" stroke="#1a1a1a" stroke-width="2" stroke-linejoin="round"/>
-  
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Gradient background circle -->
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#fff"/>
+      <stop offset="100%" stop-color="#1a1a1a"/>
+    </radialGradient>
+    <linearGradient id="car" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#00C6FB"/>
+      <stop offset="1" stop-color="#005BEA"/>
+    </linearGradient>
+    <linearGradient id="orbit" x1="0" y1="32" x2="64" y2="32" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFD700"/>
+      <stop offset="1" stop-color="#FF6A00"/>
+    </linearGradient>
+  </defs>
+  <circle cx="32" cy="32" r="30" fill="url(#bg)"/>
+  <!-- Orbit ring -->
+  <ellipse cx="32" cy="36" rx="26" ry="10" stroke="url(#orbit)" stroke-width="3" fill="none" transform="rotate(-12 32 36)"/>
+  <!-- Car body -->
+  <rect x="18" y="28" width="28" height="10" rx="5" fill="url(#car)"/>
+  <!-- Car roof -->
+  <rect x="26" y="22" width="12" height="8" rx="4" fill="#fff" fill-opacity="0.9"/>
   <!-- Wheels -->
-  <circle cx="14" cy="19" r="1.5" fill="#1a1a1a"/>
-  <circle cx="18" cy="19" r="1.5" fill="#1a1a1a"/>
+  <circle cx="24" cy="40" r="4" fill="#222" stroke="#fff" stroke-width="2"/>
+  <circle cx="40" cy="40" r="4" fill="#222" stroke="#fff" stroke-width="2"/>
+  <!-- Shine on car -->
+  <ellipse cx="32" cy="32" rx="8" ry="2" fill="#fff" fill-opacity="0.3"/>
 </svg>

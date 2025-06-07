@@ -4,7 +4,10 @@ import { FirebaseProvider } from '@/components/FirebaseProvider';
 
 export const metadata = {
   title: 'AudiOrbit',
-  description: 'Your personal music journey',
+  description: 'Premium Car Dealership Platform',
+  icons: {
+    icon: '/favicon.svg',
+  },
 };
 
 export default function RootLayout({ children }) {

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Orbital Ring -->
+  <ellipse cx="16" cy="16" rx="15" ry="8" stroke="#1a1a1a" stroke-width="2" transform="rotate(-15)" />
+  
+  <!-- Car Silhouette -->
+  <path d="M12 18.5C12 17.6716 12.6716 17 13.5 17H18.5C19.3284 17 20 17.6716 20 18.5V19C20 19.8284 19.3284 20.5 18.5 20.5H13.5C12.6716 20.5 12 19.8284 12 19V18.5Z" fill="#1a1a1a"/>
+  <path d="M11 16L13 13H19L21 16" stroke="#1a1a1a" stroke-width="2" stroke-linejoin="round"/>
+  
+  <!-- Wheels -->
+  <circle cx="14" cy="19" r="1.5" fill="#1a1a1a"/>
+  <circle cx="18" cy="19" r="1.5" fill="#1a1a1a"/>
+</svg>
